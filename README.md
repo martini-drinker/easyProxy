@@ -1,4 +1,6 @@
 # EasyProxy
+![Popup main tab](./main.png)
+
 Simple firefox proxy switcher.
 
 Support proxy: HTTP, HTTPS, SOCKS4, SOCKS5.
