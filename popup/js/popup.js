@@ -95,11 +95,11 @@ popupPort.onMessage.addListener(msg => {
 
 function showTopButton(isInList) {
 	if (isInList) {
-		topButton.innerHTML = removeHostFromListText;
+		topButton.textContent = removeHostFromListText;
 		topButton.classList.add(removeHostFromListClassName);
 		topButton.classList.remove(addHostToListClassName);
 	} else {
-		topButton.innerHTML = addHostToListText;
+		topButton.textContent = addHostToListText;
 		topButton.classList.remove(removeHostFromListClassName);
 		topButton.classList.add(addHostToListClassName);
 	}
@@ -143,9 +143,9 @@ function showContent(type) {
 }
 
 function clearContent() {
-	listTableTbody.innerHTML = ``;
+	listTableTbody.textContent = ``;
 	listTextarea.value = ``;
-	errorsTableTbody.innerHTML = ``;
+	errorsTableTbody.textContent = ``;
 }
 
 function buildMainTable() {
@@ -190,7 +190,7 @@ function showList(mode) {
 		listTable.classList.add(noneClassName);
 		
 		modeListButton.toggleAttribute(`text`, true);
-		modeListButton.innerHTML = hostsRowText;
+		modeListButton.textContent = hostsRowText;
 
 		addListButton.classList.add(noneClassName);
 	} else {
@@ -198,14 +198,14 @@ function showList(mode) {
 		listTable.classList.remove(noneClassName);
 		
 		modeListButton.toggleAttribute(`text`, false);
-		modeListButton.innerHTML = hostsTxtText;
+		modeListButton.textContent = hostsTxtText;
 
 		addListButton.classList.remove(noneClassName);
 	}
 }
 
 function buildListTable(params) {
-	listTableTbody.innerHTML = ``;
+	listTableTbody.textContent = ``;
 
 	let arr = params?.list ? params?.list : list;
 
@@ -220,7 +220,7 @@ function buildListTable(params) {
 
 function addListTableTr(host, params) {
 	let tr = document.createElement(`tr`);
-	tr.innerHTML = `<td><input type="text" value="${host}"></td><td><div class="remove">&#10006;</div></td>`;
+	tr.insertAdjacentHTML(`afterbegin`, `<td><input type="text" value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
 
 	let input = tr.querySelector(`input`);
 
@@ -300,7 +300,7 @@ function buildListText(params) {
 }
 
 function buildErrorsTable() {
-	errorsTableTbody.innerHTML = ``;
+	errorsTableTbody.textContent = ``;
 
 	errors.sort();
 
@@ -311,7 +311,7 @@ function buildErrorsTable() {
 
 function addErrorsTableTr(host) {
 	let tr = document.createElement(`tr`);
-	tr.innerHTML = `<td><div class="add">&#10010;</div></td><td><input type="text" disabled value="${host}"></td><td><div class="remove">&#10006;</div></td>`;
+	tr.insertAdjacentHTML(`afterbegin`, `<td><div class="add">&#10010;</div></td><td><input type="text" disabled value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
 
 	let addButton = tr.querySelector(`.add`);
 	let removeButton = tr.querySelector(`.remove`);
