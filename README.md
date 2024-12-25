@@ -1,5 +1,5 @@
 # EasyProxy
-![Popup main tab](./main.png)
+![Popup tab](./popup.png)
 
 Simple firefox proxy switcher.
 
