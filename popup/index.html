@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>ProxyManager</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<div class="container">
+		<div class="top"></div>
+
+		<div class="menu">
+			<div id="mainBtn">&#9874;</div>
+			<div id="listBtn">&#9776;</div>
+			<div id="errorsBtn">&#10006;</div>
+			<div id="aboutBtn">&#9432;</div>
+		</div>
+
+		<div class="content">
+			<div id="main">
+				<div>
+					<table>
+						<tbody>
+							<tr id="proxyTab">
+								<td>
+									<label class="switch">
+										<input type="checkbox">
+										<span class="slider round"></span>
+									</label>
+								</td>
+								<td>
+									<span>
+										Proxy for tab
+									</span>
+								</td>
+							</tr>
+
+							<tr id="proxyGlobal">
+								<td>
+									<label class="switch">
+										<input type="checkbox">
+										<span class="slider round"></span>
+									</label>
+								</td>
+								<td>
+									<span>
+										Global proxy
+									</span>
+								</td>
+							</tr>
+
+							<tr id="proxyList">
+								<td>
+									<label class="switch">
+										<input type="checkbox">
+										<span class="slider slider-red round"></span>
+									</label>
+								</td>
+								<td>
+									<span>
+										Host list proxy
+									</span>
+								</td>
+							</tr>
+
+							<tr>
+								<td colspan="2"></td>
+							</tr>
+
+							<tr id="type">
+								<td>Type:</td>
+								<td>
+									<select>
+										<option value="http">HTTP</option>
+										<option value="https">HTTPS</option>
+										<option value="socks4">SOCKS4</option>
+										<option value="socks">SOCKS5</option>
+									</select>
+								</td>
+							</tr>
+
+							<tr id="host">
+								<td>Host:</td>
+								<td>
+									<input type="text">
+								</td>
+							</tr>
+
+							<tr id="port">
+								<td>Port:</td>
+								<td>
+									<input type="text">
+								</td>
+							</tr>
+
+							<tr id="proxyDNS">
+								<td>
+									<label class="switch">
+										<input type="checkbox">
+										<span class="slider slider-blue round"></span>
+									</label>
+								</td>
+								<td>
+									<span>
+										Proxy DNS
+									</span>
+								</td>
+							</tr>
+
+							<tr id="auth">
+								<td>
+									<label class="switch">
+										<input type="checkbox">
+										<span class="slider slider-blue round"></span>
+									</label>
+								</td>
+								<td>
+									<span>
+										Use authorization
+									</span>
+								</td>
+							</tr>
+
+							<tr id="username">
+								<td>Name:</td>
+								<td>
+									<input type="text">
+								</td>
+							</tr>
+
+							<tr id="password">
+								<td>Pass:</td>
+								<td>
+									<input type="text">
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div id="list">
+				<div>
+					<div class="header">Host list</div>
+					<div class="list-table">
+						<table>
+							<tbody></tbody>
+						</table>
+						<textarea></textarea>
+					</div>
+					<div class="bottom">
+						<button id="modeList" class="btn-red"></button>
+						<button id="addList" class="btn-green">Add</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="errors">
+				<div>
+					<div class="header">Hosts with errors</div>
+					<div class="list-table">
+						<table>
+							<tbody></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div id="about">
+				<div>
+					<a href="https://github.com/martini-drinker/easyProxy" target="_blank"><button class="btn-purple">github</button></a>
+					<a href="https://github.com/martini-drinker/easyProxy#thank-you" target="_blank"><button class="btn-red">donate</button></a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="js/popup.js"></script>
+</body>
+</html>
