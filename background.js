@@ -143,11 +143,17 @@ async function getCurrentTab() {
 	return tabs[0];
 }
 
-function getHostFromUrl(str) {
+function getHostFromUrl(str, isFull) {
 	try {
 		let url = new URL(str);
 
-		return url?.host.match(/[^\.]+\.[^\.]+$/)[0];
+		let host = url?.hostname.replace(/^[\./]+/, ``).replace(/[\./]+$/, ``);
+
+		if (isFull) {
+			return host;
+		}
+
+		return host.match(/[^\.]+\.[^\.]+$/)[0];
 	} catch (e) {
 		return;
 	}
@@ -215,6 +221,20 @@ function removeTabErrors(tabId) {
 	}
 }
 
+function isUrlInHostList(url) {
+	let requestHost = getHostFromUrl(url, true);
+
+	let isTrue = Object.keys(settings.list).some(host => {
+		let subHost = `.${host}`;
+
+		if (requestHost === host || requestHost.lastIndexOf(subHost) === requestHost.length - subHost.length) {
+			return true;
+		}
+	});
+
+	return isTrue;
+}
+
 function addListeners() {
 	browser.windows.onFocusChanged.addListener(iconChanger);
 
@@ -237,9 +257,9 @@ function addListeners() {
 
 	browser.proxy.onRequest.addListener(requestInfo => {
 		if (
-			(settings.status && !tabs.off.has(requestInfo.tabId))
+			( settings.status && !tabs.off.has(requestInfo.tabId) )
 			|| !settings.status && tabs.on.has(requestInfo.tabId)
-			|| (settings.list[getHostFromUrl(requestInfo.url)] && settings.proxyList)
+			|| ( settings.proxyList && isUrlInHostList(requestInfo.url) )
 			) {
 
 			let proxyInfo = Object.assign({}, settings.proxyInfo);

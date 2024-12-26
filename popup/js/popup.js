@@ -225,7 +225,7 @@ function addListTableTr(host, params) {
 	let input = tr.querySelector(`input`);
 
 	input.addEventListener(`change`, e => {
-		input.value = input.value.replace(/\s/g, ``);
+		input.value = hostNormalize(input.value);
 
 		let listObj = {};
 
@@ -279,6 +279,10 @@ function addListTableTr(host, params) {
 	if (params?.focus) {
 		input.focus();
 	}
+}
+
+function hostNormalize(host) {
+	return host.replace(/\s+/g, ``).replace(/^[\./]+/, ``).replace(/[\./]+$/, ``).toLowerCase();
 }
 
 function listRemove(host) {
@@ -406,7 +410,7 @@ function removeListTableTr(host) {
 }
 
 function getListFromTextArea() {
-	let set = new Set( listTextarea.value.split(`\n`).map(host => host.replace(/\s/g, ``)).filter(host => host !== ``) );
+	let set = new Set( listTextarea.value.split(`\n`).map(host => hostNormalize(host)).filter(host => host !== ``) );
 
 	return [...set];
 }
