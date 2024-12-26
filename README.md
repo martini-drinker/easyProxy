@@ -5,7 +5,7 @@ Simple firefox proxy switcher.
 
 Support proxy: HTTP, HTTPS, SOCKS4, SOCKS5.
 - Tab proxy
-- Host list proxy
+- Host list proxy (subdomain support)
 - DNS proxy (SOCKS4, SOCKS5)
 - Proxy authorization
 - Show host with errors

@@ -225,9 +225,15 @@ function isUrlInHostList(url) {
 	let requestHost = getHostFromUrl(url, true);
 
 	let isTrue = Object.keys(settings.list).some(host => {
+		if (requestHost === host) {
+			return true;
+		}
+
 		let subHost = `.${host}`;
 
-		if (requestHost === host || requestHost.lastIndexOf(subHost) === requestHost.length - subHost.length) {
+		let index = requestHost.lastIndexOf(subHost);
+
+		if (index !== -1 && index === requestHost.length - subHost.length) {
 			return true;
 		}
 	});

@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "EasyProxy",
-	"version": "2.1",
+	"version": "2.2",
 	"description": "Simple proxy switcher. Tab proxy support.",
 	"icons": {
 		"48": "img/48.png",
