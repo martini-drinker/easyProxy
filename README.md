@@ -2,6 +2,7 @@
 ![Popup main tab](./popup-main-tab.png)
 
 Simple firefox proxy switcher.
+Firefox for Android support.
 
 Support proxy: HTTP, HTTPS, SOCKS4, SOCKS5.
 - Tab proxy
