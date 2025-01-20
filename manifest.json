@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "EasyProxy",
-	"version": "2.2",
+	"version": "3.0",
 	"description": "Simple proxy switcher. Tab proxy support.",
 	"icons": {
 		"48": "img/48.png",
@@ -27,6 +27,7 @@
 		"gecko": {
 			"id": "easyproxy@martini-drinker",
 			"strict_min_version": "91.1.0"
-		}
+		},
+		"gecko_android": {}
 	}
 }

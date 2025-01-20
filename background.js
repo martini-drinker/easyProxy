@@ -242,8 +242,12 @@ function isUrlInHostList(url) {
 }
 
 function addListeners() {
-	browser.windows.onFocusChanged.addListener(iconChanger);
+	try {
+		browser.windows.onFocusChanged.addListener(iconChanger);
+	} catch (e) {
 
+	}
+	
 	browser.tabs.onActivated.addListener(iconChanger);
 
 	browser.tabs.onRemoved.addListener(tabId => {
