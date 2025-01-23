@@ -20,6 +20,7 @@ body {
 	font-size: 14px;
 	background-color: var(--color-bg-body);
 	color: var(--color-text);
+  cursor: default;
 }
 
 .switch {
@@ -144,7 +145,7 @@ button {
 }
 
 .none {
-  display: none;
+  display: none !important;
 }
 
 .center {
@@ -159,12 +160,23 @@ button {
 }
 
 .top {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   margin-bottom: 10px;
-  line-height: 40px;
   flex-shrink: 0;
   text-align: center;
   cursor: pointer;
+  text-shadow: 0 0 4px var(--color-bg-content);
+  padding: 5px 0;
+}
+
+.top > div {
+  width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bg-green {

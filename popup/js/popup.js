@@ -1,5 +1,5 @@
-const addHostToListText = `Add this host to list`;
-const removeHostFromListText = `Remove this host from list`;
+const addHostToListText = `Add host to list`;
+const removeHostFromListText = `Remove host from list`;
 const hostsTxtText = `Text`;
 const hostsRowText = `Row`;
 
@@ -52,7 +52,7 @@ let topButton = document.querySelector(`.top`);
 let addListButton = document.querySelector(`#addList`);
 let modeListButton = document.querySelector(`#modeList`);
 
-let settings, list, tabId, hostTab, statusTab, errors;
+let settings, list, hostTab, statusTab, errors;
 
 let popupPort = browser.runtime.connect({name: `popup`});
 
@@ -60,9 +60,8 @@ popupPort.onMessage.addListener(msg => {
 	if (msg.settings) {
 		settings = msg.settings;
 		list = Object.keys(settings.list);
-		tabId = msg.tabId;
-		hostTab = msg.hostTab;
-		statusTab = msg.statusTab;
+		hostTab = msg.host;
+		statusTab = msg.status;
 		errors = msg.errors;
 
 		if (hostTab) {
@@ -76,7 +75,17 @@ popupPort.onMessage.addListener(msg => {
 		buildMainTable();
 
 		showContent(`main`);
-	} else if (typeof msg.errorsLive !== `undefined` && msg.tabId === tabId) {
+	} else if (typeof msg.hostLive !== `undefined`) {
+		hostTab = msg.hostLive;
+
+		if (hostTab) {
+			showTopButton(list.includes(hostTab));
+
+			topButton.classList.remove(noneClassName);
+		} else {
+			topButton.classList.add(noneClassName);
+		}
+	} else if (typeof msg.errorsLive !== `undefined`) {
 		if (msg.errorsLive) {
 			errors.push(msg.errorsLive);
 
@@ -94,12 +103,16 @@ popupPort.onMessage.addListener(msg => {
 });
 
 function showTopButton(isInList) {
+	let divArr = topButton.querySelectorAll(`div`);
+
+	divArr[0].textContent = hostTab;
+
 	if (isInList) {
-		topButton.textContent = removeHostFromListText;
+		divArr[1].textContent = removeHostFromListText;
 		topButton.classList.add(removeHostFromListClassName);
 		topButton.classList.remove(addHostToListClassName);
 	} else {
-		topButton.textContent = addHostToListText;
+		divArr[1].textContent = addHostToListText;
 		topButton.classList.remove(removeHostFromListClassName);
 		topButton.classList.add(addHostToListClassName);
 	}
@@ -447,7 +460,7 @@ function addListeners() {
 	});
 
 	topButton.addEventListener(`click`, e => {
-		let mode = e.target.classList.contains(addHostToListClassName);
+		let mode = topButton.classList.contains(addHostToListClassName);
 
 		showTopButton(mode);
 
