@@ -48,10 +48,14 @@ let popupPorts = {};
 
 function addListeners() {
 	try {
-		browser.windows.onFocusChanged.addListener(iconUpdate);
+		browser.windows.onFocusChanged.addListener(() => {
+			iconUpdate();
+		});
 	} catch (e) {}
 	
-	browser.tabs.onActivated.addListener(iconUpdate);
+	browser.tabs.onActivated.addListener(activeInfo => {
+		iconUpdate(activeInfo.tabId);
+	});
 
 	browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
 		if (changeInfo.url) {
@@ -65,8 +69,8 @@ function addListeners() {
 
 	browser.proxy.onRequest.addListener(requestInfo => {
 		if (
-			tabs[requestInfo.tabId]?.status
-			|| ( settings.proxyList && isUrlInHostList(requestInfo.url) )
+			(tabs[requestInfo.tabId] ? tabs[requestInfo.tabId].status : settings.status)
+			|| settings.proxyList && isUrlInHostList(requestInfo.url)
 			) {
 
 			let proxyInfo = Object.assign({}, settings.proxyInfo);
@@ -114,17 +118,31 @@ function addListeners() {
 	}, {urls: [`<all_urls>`]}, [`blocking`]);
 }
 
-function iconUpdate() {
-	(async () => {
-		let tab = await getTab();
+async function getActiveTab() {
+	return (await browser.tabs.query({currentWindow: true, active: true}))[0];
+}
 
-		updateAddonStateForActiveTab(tab.status);
+function iconUpdate(tabId) {
+	(async () => {
+		if (typeof tabId === `undefined`) {
+			let activeTab = await getActiveTab();
+
+			tabId = activeTab?.id;
+		}
+
+		let tab = getTab(tabId);
+
+		updateAddonStateForActiveTab(tab ? tab.status : settings.status);
 	})();
 
 	return true;
 }
 
 function onUrlUpdate(tabId, url) {
+	if (tabId === -1) {
+		return;
+	}
+
 	let host = getHostFromUrl(url);
 
 	if (tabs[tabId]) {
@@ -155,8 +173,8 @@ function updateAddonStateForActiveTab(tabStatus) {
 	}
 }
 
-async function setIcon(mode) {
-	await browser.browserAction.setIcon({
+function setIcon(mode) {
+	browser.browserAction.setIcon({
 	    path: {
 	        32: ICONS[mode]
 	    }
@@ -203,20 +221,20 @@ function getHostFromUrl(str, isFull) {
 	}
 }
 
-async function addTabErrors(url, tabId) {
+function addTabErrors(url, tabId) {
+	let tab = getTab(tabId);
+
+	if (!tab) {
+		return;
+	}
+
 	let host = getHostFromUrl(url);
 
-	if (!host || tabId === -1) {
+	if (!host || tab.errors.has(host)) {
 		return;
 	}
 
-	let tab = await getTab(tabId);
-
-	if (tab.errors.has(host)) {
-		return;
-	}
-
-	tab.errors.add(host)
+	tab.errors.add(host);
 
 	if (popupPorts[tabId]) {
 		popupPorts[tabId].postMessage({errorsLive: host});
@@ -224,7 +242,17 @@ async function addTabErrors(url, tabId) {
 }
 
 async function onConnect(port) {
-	let tab = await getTab();
+	let activeTab = await getActiveTab();
+
+	let tab = getTab(activeTab?.id);
+
+	if (typeof tab.host === `undefined`) {
+		tab.host = getHostFromUrl(activeTab?.url);
+	}
+
+	if (!tab) {
+		tab = new Tab();
+	}
 
 	if (tab.id) {
 		popupPorts[tab.id] = port;
@@ -245,32 +273,21 @@ async function onConnect(port) {
     });
 }
 
-async function getTab(tabId) {
-	let activeTab;
-
-	if (!tabId || (tabId !== -1 && !tabs[tabId])) {
-		activeTab = (await browser.tabs.query({currentWindow: true, active: true}))[0];
-
-		if (activeTab?.id && activeTab.id != -1) {
-			tabId = activeTab.id;
-		}
-	}
-
-	if (!tabId || tabId === -1) {
-		return new Tab();
+function getTab(tabId) {
+	if (typeof tabId === `undefined` || tabId === -1) {
+		return;
 	}
 
 	if (!tabs[tabId]) {
 		tabs[tabId] = new Tab({
-			id: tabId,
-			host: getHostFromUrl(activeTab?.url)
+			id: tabId
 		});
 	}
 
 	return tabs[tabId];
 }
 
-async function onPopupMessage(msg, tab) {
+function onPopupMessage(msg, tab) {
 	if (typeof msg.proxyTab !== `undefined`) {
 		if (tab.id) {
 			tab.status = msg.proxyTab;
@@ -282,13 +299,17 @@ async function onPopupMessage(msg, tab) {
 
 		tab.status = settings.status;
 
-		await browser.storage.local.set({status: settings.status});
+		for (let tab in tabs) {
+			tabs[tab].status = settings.status;
+		}
+
+		browser.storage.local.set({status: settings.status});
 
 		updateAddonStateForActiveTab(tab.status);
 	} else if (typeof msg.proxyList !== `undefined`) {
 		settings.proxyList = msg.proxyList;
 
-		await browser.storage.local.set({proxyList: settings.proxyList});
+		browser.storage.local.set({proxyList: settings.proxyList});
 
 		updateAddonStateForActiveTab(tab.status);
 	} else if (typeof msg.type !== `undefined`) {
@@ -300,11 +321,11 @@ async function onPopupMessage(msg, tab) {
 		settings.authInfo.username = msg.username;
 		settings.authInfo.password = msg.password;
 
-		await browser.storage.local.set(settings);
+		browser.storage.local.set(settings);
 	} else if (typeof msg.list !== `undefined`) {
 		settings.list = msg.list;
 
-		await browser.storage.local.set({list: settings.list});
+		browser.storage.local.set({list: settings.list});
 	} else if (typeof msg.listAddRemove !== `undefined`) {
 		let host = msg.host ? msg.host : tab.host;
 
@@ -315,7 +336,7 @@ async function onPopupMessage(msg, tab) {
 				delete settings.list[host];
 			}
 
-			await browser.storage.local.set({list: settings.list});
+			browser.storage.local.set({list: settings.list});
 		}
 	}
 }
