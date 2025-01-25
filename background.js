@@ -21,6 +21,8 @@ let settings = {
 	list: {}
 };
 
+let proxyInfo = getProxyInfo();
+
 let tabs = {};
 
 class Tab {
@@ -45,6 +47,20 @@ let popupPorts = {};
 
 	browser.runtime.onConnect.addListener(onConnect);
 })();
+
+function getProxyInfo() {
+	let proxyInfo = Object.assign({}, settings.proxyInfo);
+
+	if (settings.auth && settings.proxyInfo.type === `socks`) {
+		Object.assign(proxyInfo, settings.authInfo);
+	}
+
+	if (settings.proxyDNS) {
+		proxyInfo.proxyDNS = settings.proxyDNS;
+	}
+
+	return proxyInfo;
+}
 
 function addListeners() {
 	try {
@@ -72,17 +88,6 @@ function addListeners() {
 			(tabs[requestInfo.tabId] ? tabs[requestInfo.tabId].status : settings.status)
 			|| settings.proxyList && isUrlInHostList(requestInfo.url)
 			) {
-
-			let proxyInfo = Object.assign({}, settings.proxyInfo);
-
-			if (settings.auth && settings.proxyInfo.type === `socks`) {
-				Object.assign(proxyInfo, settings.authInfo);
-			}
-
-			if (settings.proxyDNS) {
-				proxyInfo.proxyDNS = settings.proxyDNS;
-			}
-
 			return proxyInfo;
 		}
 
@@ -320,6 +325,8 @@ function onPopupMessage(msg, tab) {
 		settings.auth = msg.auth;
 		settings.authInfo.username = msg.username;
 		settings.authInfo.password = msg.password;
+
+		proxyInfo = getProxyInfo();
 
 		browser.storage.local.set(settings);
 	} else if (typeof msg.list !== `undefined`) {
