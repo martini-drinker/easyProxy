@@ -21,8 +21,6 @@ let settings = {
 	list: {}
 };
 
-let proxyInfo = getProxyInfo();
-
 let tabs = {};
 
 class Tab {
@@ -34,12 +32,15 @@ class Tab {
 	}
 }
 
+let proxyInfo;
 let popupPorts = {};
 
 (async () => {
 	let storageData = await browser.storage.local.get();
 
 	Object.assign(settings, storageData);
+
+	proxyInfo = getProxyInfo();
 
 	await browser.storage.local.set(settings);
 
