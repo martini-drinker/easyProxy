@@ -13,6 +13,9 @@
   --color-green: #3cb371;
   --color-red: #ff7f50;
   --color-purple: #6e5494;
+  --color-error: rgba(240, 128, 128, 0.5);
+  --color-waiting: rgba(33, 150, 243, 0.5);
+  --color-complete: rgba(60, 179, 113, 0.5);
 }
 
 body {
@@ -262,11 +265,22 @@ button {
   width: 138px;
 }
 
-#errors input {
+#monitor input {
   width: 110px;
-  background-color: var(--color-slider-bg);
   color: var(--color-text-block);
   border: none;
+}
+
+.error {
+  background-color: var(--color-error);
+}
+
+.waiting {
+  background-color: var(--color-waiting);
+}
+
+.complete {
+  background-color: var(--color-complete);
 }
 
 .add, .remove {

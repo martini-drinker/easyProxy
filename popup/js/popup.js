@@ -9,6 +9,9 @@ const hiddenClassName = `hidden`;
 const activeClassName = `active`;
 const addHostToListClassName = `bg-green`;
 const removeHostFromListClassName = `bg-red`;
+const errorClassName = `error`;
+const waitingClassName = `waiting`;
+const completeClassName = `complete`;
 
 let content = {
 	main: {
@@ -19,9 +22,9 @@ let content = {
 		button: document.querySelector(`#listBtn`),
 		container: document.querySelector(`#list`)
 	},
-	errors: {
-		button: document.querySelector(`#errorsBtn`),
-		container: document.querySelector(`#errors`)
+	monitor: {
+		button: document.querySelector(`#monitorBtn`),
+		container: document.querySelector(`#monitor`)
 	},
 	about: {
 		button: document.querySelector(`#aboutBtn`),
@@ -46,13 +49,13 @@ let passwordInput = passwordTr.querySelector(`input`);
 let listTable = document.querySelector(`#list table`);
 let listTableTbody = document.querySelector(`#list table tbody`);
 let listTextarea = document.querySelector(`#list textarea`);
-let errorsTable = document.querySelector(`#errors table`);
-let errorsTableTbody = document.querySelector(`#errors table tbody`);
+let monitorTable = document.querySelector(`#monitor table`);
+let monitorTableTbody = document.querySelector(`#monitor table tbody`);
 let topButton = document.querySelector(`.top`);
 let addListButton = document.querySelector(`#addList`);
 let modeListButton = document.querySelector(`#modeList`);
 
-let settings, list, hostTab, statusTab, errors;
+let settings, list, hostTab, statusTab, monitor;
 
 let popupPort = browser.runtime.connect({name: `popup`});
 
@@ -62,7 +65,7 @@ popupPort.onMessage.addListener(msg => {
 		list = Object.keys(settings.list);
 		hostTab = msg.host;
 		statusTab = msg.status;
-		errors = msg.errors;
+		monitor = msg.monitor;
 
 		if (hostTab) {
 			showTopButton(list.includes(hostTab));
@@ -85,20 +88,26 @@ popupPort.onMessage.addListener(msg => {
 		} else {
 			topButton.classList.add(noneClassName);
 		}
-	} else if (typeof msg.errorsLive !== `undefined`) {
-		if (msg.errorsLive) {
-			errors.push(msg.errorsLive);
+	} else if (typeof msg.monitorLive !== `undefined`) {
+		if (msg.isUpdate) {
+			monitor = {};
 
-			if (!content.errors.container.classList.contains(noneClassName)) {
-				addErrorsTableTr(msg.errorsLive);
-			}
-		} else {
-			errors = [];
-
-			if (!content.errors.container.classList.contains(noneClassName)) {
+			if (!content.monitor.container.classList.contains(noneClassName)) {
 				clearContent();
 			}
 		}
+
+		let [host, value] = msg.monitorLive;
+
+		if (!content.monitor.container.classList.contains(noneClassName)) {
+			if (typeof monitor[host] !== `undefined`) {
+				changeMonitorInputColor(host, getMonitorInputClass(value));
+			} else {
+				addMonitorTableTr(host, getMonitorInputClass(value));
+			}
+		}
+
+		monitor[host] = value;
 	}
 });
 
@@ -138,8 +147,8 @@ function showContent(type) {
 			}
 			
 			break;
-		case `errors`:
-			buildErrorsTable();
+		case `monitor`:
+			buildMonitorTable();
 
 			break;
 	}
@@ -158,7 +167,7 @@ function showContent(type) {
 function clearContent() {
 	listTableTbody.textContent = ``;
 	listTextarea.value = ``;
-	errorsTableTbody.textContent = ``;
+	monitorTableTbody.textContent = ``;
 }
 
 function buildMainTable() {
@@ -316,19 +325,17 @@ function buildListText(params) {
 	listTextarea.value = arr.join(`\n`);
 }
 
-function buildErrorsTable() {
-	errorsTableTbody.textContent = ``;
+function buildMonitorTable() {
+	monitorTableTbody.textContent = ``;
 
-	errors.sort();
-
-	for (let host of errors) {
-		addErrorsTableTr(host);
-	}
+	Object.keys(monitor).sort().forEach(host => {
+		addMonitorTableTr(host, getMonitorInputClass(monitor[host]));
+	});
 }
 
-function addErrorsTableTr(host) {
+function addMonitorTableTr(host, className) {
 	let tr = document.createElement(`tr`);
-	tr.insertAdjacentHTML(`afterbegin`, `<td><div class="add">&#10010;</div></td><td><input type="text" disabled value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
+	tr.insertAdjacentHTML(`afterbegin`, `<td><div class="add">&#10010;</div></td><td><input class="${className}" type="text" disabled value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
 
 	let addButton = tr.querySelector(`.add`);
 	let removeButton = tr.querySelector(`.remove`);
@@ -373,7 +380,17 @@ function addErrorsTableTr(host) {
 		popupPort.postMessage({listAddRemove: true, host: host});
 	});
 
-	errorsTableTbody.append(tr);
+	monitorTableTbody.append(tr);
+}
+
+function getMonitorInputClass(value) {
+	if (value === false) {
+		return errorClassName;
+	} else if (value > 0) {
+		return waitingClassName;
+	}
+
+	return completeClassName;
 }
 
 function listAdd(host, params) {
@@ -396,8 +413,8 @@ function removeListText(host) {
 	listTextarea.value = listTextarea.value.split(`\n`).filter(value => value !== host).join(`\n`);
 }
 
-function changeErrorsTr(host, mode) {
-	for (let input of errorsTableTbody.querySelectorAll(`input`)) {
+function changeMonitorTrButtons(host, mode) {
+	for (let input of monitorTableTbody.querySelectorAll(`input`)) {
 		if (input.value === host) {
 			let tr = input.closest(`tr`);
 
@@ -408,6 +425,14 @@ function changeErrorsTr(host, mode) {
 				tr.querySelector(`.add`).classList.add(hiddenClassName);
 				tr.querySelector(`.remove`).classList.remove(hiddenClassName);
 			}
+		}
+	}
+}
+
+function changeMonitorInputColor(host, className) {
+	for (let input of monitorTableTbody.querySelectorAll(`input`)) {
+		if (input.value === host) {
+			input.className = className;
 		}
 	}
 }
@@ -451,8 +476,8 @@ function addListeners() {
 		showContent(`list`);
 	});
 
-	content.errors.button.addEventListener(`click`, () => {
-		showContent(`errors`);
+	content.monitor.button.addEventListener(`click`, () => {
+		showContent(`monitor`);
 	});
 
 	content.about.button.addEventListener(`click`, () => {
@@ -473,8 +498,8 @@ function addListeners() {
 				} else {
 					addListText(hostTab);
 				}
-			} else if (!content.errors.container.classList.contains(noneClassName)) {
-				changeErrorsTr(hostTab, false);
+			} else if (!content.monitor.container.classList.contains(noneClassName)) {
+				changeMonitorTrButtons(hostTab, false);
 			}
 		} else {
 			listRemove(hostTab);
@@ -485,8 +510,8 @@ function addListeners() {
 				} else {
 					removeListText(hostTab);
 				}
-			} else if (!content.errors.container.classList.contains(noneClassName)) {
-				changeErrorsTr(hostTab, true);
+			} else if (!content.monitor.container.classList.contains(noneClassName)) {
+				changeMonitorTrButtons(hostTab, true);
 			}
 		}
 

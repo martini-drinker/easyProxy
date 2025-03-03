@@ -1,5 +1,5 @@
 # EasyProxy
-![Popup main tab](./popup-main-tab.png)
+![Popup](./popup.png)
 
 Simple firefox proxy switcher.
 Firefox for Android support.
@@ -9,7 +9,7 @@ Support proxy: HTTP, HTTPS, SOCKS4, SOCKS5.
 - Host list proxy (subdomain support)
 - DNS proxy (SOCKS4, SOCKS5)
 - Proxy authorization
-- Show host with errors
+- Host monitor
 # Thank you
 | BTC |
 | :---: |

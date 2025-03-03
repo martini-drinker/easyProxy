@@ -4,45 +4,43 @@ const ICONS = {
 	list: `img/list-32.png`
 };
 
-let settings = {
-	proxyInfo: {
-		type: `socks`,
-		host: `127.0.0.1`,
-		port: 9050
-	},
-	proxyDNS: false,
-	auth: false,
-	authInfo: {
-		username: ``,
-		password: ``
-	},
-	status: false,
-	listProxy: false,
-	list: {}
-};
-
-let tabs = {};
-
 class Tab {
 	constructor(obj) {
 		this.id = obj?.id;
 		this.host = obj?.host;
 		this.status = (typeof obj?.status !== `undefined`) ? obj.status : settings.status;
-		this.errors = obj?.errors || new Set(); 
+		this.monitor = obj?.monitor || {}; 
 	}
 }
 
-let proxyInfo;
-let popupPorts = {};
+let settings,
+	proxyInfo,
+	tabs = {},
+	popupPorts = {};
 
 (async () => {
 	let storageData = await browser.storage.local.get();
 
-	Object.assign(settings, storageData);
-
-	proxyInfo = getProxyInfo();
+	settings = {
+		proxyInfo: {
+			type: typeof storageData?.proxyInfo?.type !== `undefined` ? storageData.proxyInfo.type : `socks`,
+			host: typeof storageData?.proxyInfo?.host !== `undefined` ? storageData.proxyInfo.host : `127.0.0.1`,
+			port: typeof storageData?.proxyInfo?.port !== `undefined` ? storageData.proxyInfo.port : 9050
+		},
+		proxyDNS: typeof storageData?.proxyDNS !== `undefined` ? storageData.proxyDNS : false,
+		auth: typeof storageData?.auth !== `undefined` ? storageData.auth : false,
+		authInfo: {
+			username: typeof storageData?.authInfo?.username !== `undefined` ? storageData.authInfo.username : ``,
+			password: typeof storageData?.authInfo?.password !== `undefined` ? storageData.authInfo.password : ``
+		},
+		status: typeof storageData?.status !== `undefined` ? storageData.status : false,
+		proxyList: typeof storageData?.proxyList !== `undefined` ? storageData.proxyList : false,
+		list: typeof storageData?.list !== `undefined` ? storageData.list : {}
+	}
 
 	await browser.storage.local.set(settings);
+
+	proxyInfo = getProxyInfo();
 
 	addListeners();
 
@@ -74,12 +72,6 @@ function addListeners() {
 		iconUpdate(activeInfo.tabId);
 	});
 
-	browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
-		if (changeInfo.url) {
-			onUrlUpdate(tabId, changeInfo.url);
-		}
-	});
-
 	browser.tabs.onRemoved.addListener(tabId => {
 		delete tabs[tabId];
 	});
@@ -100,17 +92,21 @@ function addListeners() {
 	});
 
 	browser.webRequest.onBeforeRequest.addListener(details => {
-		onUrlUpdate(details.tabId, details.url);
-	}, {urls: [`<all_urls>`], types: [`main_frame`]});
+		onBeforeRequest(details);
+	}, {urls: [`<all_urls>`]});
 
 	browser.webRequest.onErrorOccurred.addListener(details => {
-		addTabErrors(details.url, details.tabId);
+		addTabMonitor(details.tabId, details.url, false);
+	}, {urls: [`<all_urls>`]});
+
+	browser.webRequest.onBeforeRedirect.addListener(details => {
+		addTabMonitor(details.tabId, details.url, -1);
 	}, {urls: [`<all_urls>`]});
 
 	browser.webRequest.onCompleted.addListener(details => {
-		if (details.statusCode >= 400) {
-			addTabErrors(details.url, details.tabId);
-		}
+		let value = details.statusCode < 400 ? -1 : false;
+
+		addTabMonitor(details.tabId, details.url, value);
 	}, {urls: [`<all_urls>`]});
 
 	browser.webRequest.onAuthRequired.addListener(details => {
@@ -144,28 +140,29 @@ function iconUpdate(tabId) {
 	return true;
 }
 
-function onUrlUpdate(tabId, url) {
-	if (tabId === -1) {
+function onBeforeRequest(details) {
+	let tab = getTab(details.tabId);
+
+	let host = getHostFromUrl(details.url)?.host;
+
+	if (!tab || !host) {
 		return;
 	}
 
-	let host = getHostFromUrl(url);
+	if (details.type === `main_frame`) {
+		tab.host = host;
+		tab.monitor = {};
+		tab.monitor[host] = 1;
 
-	if (tabs[tabId]) {
-		tabs[tabId].host = host;
+		if (popupPorts[tab.id]) {
+			popupPorts[tab.id].postMessage({hostLive: host});
 
-		tabs[tabId].errors = new Set();
+			popupPorts[tab.id].postMessage({monitorLive: [host, 1], isUpdate: true});
+		}
+	} else if (tab.monitor[host] === false) {
+		return;
 	} else {
-		tabs[tabId] = new Tab({
-			id: tabId,
-			host: host
-		});
-	}
-
-	if (popupPorts[tabId]) {
-		popupPorts[tabId].postMessage({hostLive: host});
-
-		popupPorts[tabId].postMessage({errorsLive: false});
+		setTabMonitor(tab, host, 1);
 	}
 }
 
@@ -188,19 +185,25 @@ function setIcon(mode) {
 }
 
 function isUrlInHostList(url) {
-	let requestHost = getHostFromUrl(url, true);
+	let requestAddress = getHostFromUrl(url, true);
+
+	if (!requestAddress) {
+		return;
+	}
 
 	let isTrue = Object.keys(settings.list).some(host => {
-		if (requestHost === host) {
+		if (requestAddress.host === host) {
 			return true;
 		}
 
-		let subHost = `.${host}`;
+		if (!requestAddress.isIp) {
+			let subHost = `.${host}`;
 
-		let index = requestHost.lastIndexOf(subHost);
+			let index = requestAddress.host.lastIndexOf(subHost);
 
-		if (index !== -1 && index === requestHost.length - subHost.length) {
-			return true;
+			if (index !== -1 && index === requestAddress.host.length - subHost.length) {
+				return true;
+			}
 		}
 	});
 
@@ -215,35 +218,53 @@ function getHostFromUrl(str, isFull) {
 	try {
 		let url = new URL(str);
 
-		let host = url?.hostname.replace(/^[\./]+/, ``).replace(/[\./]+$/, ``);
-
-		if (isFull) {
-			return host;
+		if (!url.hostname || url.hostname === ``) {
+			return;
 		}
 
-		return host.match(/[^\.]+\.[^\.]+$/)[0];
+		let hostname = url.hostname.replace(/^[\.]+/, ``).replace(/[\.]+$/, ``);
+
+		if (isFull) {
+			return {host: hostname};
+		}
+
+		let hostnameArr = hostname.split(`.`);
+
+		if (hostnameArr.length === 4 && hostnameArr.every(e => e !== `` && Number.isInteger(+e) && e >= 0 && e < 256)) {
+			return {host: hostname, isIp: true};
+		}
+
+		return {host: hostnameArr.slice(-2).join(`.`)};
 	} catch (e) {
 		return;
 	}
 }
 
-function addTabErrors(url, tabId) {
+function addTabMonitor(tabId, url, value) {
 	let tab = getTab(tabId);
 
-	if (!tab) {
+	let host = getHostFromUrl(url)?.host;
+
+	if (!tab || !host || tab.monitor[host] === false) {
 		return;
 	}
 
-	let host = getHostFromUrl(url);
+	setTabMonitor(tab, host, value);
+}
 
-	if (!host || tab.errors.has(host)) {
-		return;
+function setTabMonitor(tab, host, value) {
+	if (value === false) {
+		tab.monitor[host] = false;
+	} else {
+		if (typeof tab.monitor[host] === `undefined`) {
+			tab.monitor[host] = 0;
+		}
+
+		tab.monitor[host] += value;
 	}
 
-	tab.errors.add(host);
-
-	if (popupPorts[tabId]) {
-		popupPorts[tabId].postMessage({errorsLive: host});
+	if (popupPorts[tab.id]) {
+		popupPorts[tab.id].postMessage({monitorLive: [host, tab.monitor[host]]});
 	}
 }
 
@@ -253,7 +274,7 @@ async function onConnect(port) {
 	let tab = getTab(activeTab?.id);
 
 	if (typeof tab.host === `undefined`) {
-		tab.host = getHostFromUrl(activeTab?.url);
+		tab.host = getHostFromUrl(activeTab?.url)?.host;
 	}
 
 	if (!tab) {
@@ -265,8 +286,6 @@ async function onConnect(port) {
 	}
 
 	let params = Object.assign({settings: settings}, tab);
-
-	params.errors = [...params.errors];
 
 	port.postMessage(params);
 
