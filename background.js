@@ -42,6 +42,8 @@ let settings,
 
 	proxyInfo = getProxyInfo();
 
+	iconUpdate();
+
 	addListeners();
 
 	browser.runtime.onConnect.addListener(onConnect);
