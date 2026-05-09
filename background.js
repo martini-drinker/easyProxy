@@ -252,9 +252,11 @@ function addListeners() {
 		});
 	});
 
-	browser.windows.onFocusChanged.addListener(async () => {
-		await updateIcon(await getTab());
-	});
+	if (browser.windows?.onFocusChanged?.addListener) {
+		browser.windows.onFocusChanged.addListener(async () => {
+			await updateIcon(await getTab());
+		});
+	}
 
 	browser.tabs.onActivated.addListener(async activeInfo => {
 		await updateIcon(await getTab(activeInfo.tabId));
