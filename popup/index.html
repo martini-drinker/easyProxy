@@ -4,180 +4,145 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>EasyProxy</title>
-	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 	<div class="container">
-		<div class="top">
-			<div></div>
-			<div></div>
+		<div id="top">
+			<div id="host"></div>
+			<div id="host-text" data-add-text="add host to list" data-remove-text="remove host from list"></div>
 		</div>
 
-		<div class="menu">
-			<div id="mainBtn">&#9874;</div>
-			<div id="listBtn">&#9776;</div>
-			<div id="monitorBtn">&#128065;</div>
-			<div id="aboutBtn">&#9432;</div>
+		<div id="menu">
+			<div id="controls-btn">&#9096;</div>
+			<div id="settings-btn">&#9874;</div>
+			<div id="list-btn">&#9776;</div>
+			<div id="tracker-btn">&#128065;</div>
+			<div id="about-btn">&#9432;</div>
 		</div>
 
-		<div class="content">
-			<div id="main">
-				<div>
-					<table>
-						<tbody>
-							<tr id="proxyTab">
-								<td>
-									<label class="switch">
-										<input type="checkbox">
-										<span class="slider round"></span>
-									</label>
-								</td>
-								<td>
-									<span>
-										Proxy for tab
-									</span>
-								</td>
-							</tr>
+		<div id="content">
+			<div id="controls" class="none">
+				<div id="controls-tab">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider green"></span>
+					</label>
+					<div>this tab</div>
+				</div>
 
-							<tr id="proxyGlobal">
-								<td>
-									<label class="switch">
-										<input type="checkbox">
-										<span class="slider round"></span>
-									</label>
-								</td>
-								<td>
-									<span>
-										Global proxy
-									</span>
-								</td>
-							</tr>
+				<div id="controls-host-list">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider orange"></span>
+					</label>
+					<div>host list</div>
+				</div>
 
-							<tr id="proxyList">
-								<td>
-									<label class="switch">
-										<input type="checkbox">
-										<span class="slider slider-red round"></span>
-									</label>
-								</td>
-								<td>
-									<span>
-										Host list proxy
-									</span>
-								</td>
-							</tr>
+				<div id="controls-regular-tabs">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider green"></span>
+					</label>
+					<div>regular tabs</div>
+				</div>
 
-							<tr>
-								<td colspan="2"></td>
-							</tr>
+				<div id="controls-incognito-tabs">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider purple"></span>
+					</label>
+					<div>incognito tabs</div>
+				</div>
 
-							<tr id="type">
-								<td>Type:</td>
-								<td>
-									<select>
-										<option value="http">HTTP</option>
-										<option value="https">HTTPS</option>
-										<option value="socks4">SOCKS4</option>
-										<option value="socks">SOCKS5</option>
-									</select>
-								</td>
-							</tr>
-
-							<tr id="host">
-								<td>Host:</td>
-								<td>
-									<input type="text">
-								</td>
-							</tr>
-
-							<tr id="port">
-								<td>Port:</td>
-								<td>
-									<input type="text">
-								</td>
-							</tr>
-
-							<tr id="proxyDNS">
-								<td>
-									<label class="switch">
-										<input type="checkbox">
-										<span class="slider slider-blue round"></span>
-									</label>
-								</td>
-								<td>
-									<span>
-										Proxy DNS
-									</span>
-								</td>
-							</tr>
-
-							<tr id="auth">
-								<td>
-									<label class="switch">
-										<input type="checkbox">
-										<span class="slider slider-blue round"></span>
-									</label>
-								</td>
-								<td>
-									<span>
-										Use authorization
-									</span>
-								</td>
-							</tr>
-
-							<tr id="username">
-								<td>Name:</td>
-								<td>
-									<input type="text">
-								</td>
-							</tr>
-
-							<tr id="password">
-								<td>Pass:</td>
-								<td>
-									<input type="text">
-								</td>
-							</tr>
-						</tbody>
-					</table>
+				<div id="controls-dns">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider"></span>
+					</label>
+					<div>DNS proxy</div>
 				</div>
 			</div>
 
-			<div id="list">
-				<div>
-					<div class="header">Host list</div>
-					<div class="list-table">
-						<table>
-							<tbody></tbody>
-						</table>
-						<textarea></textarea>
-					</div>
-					<div class="bottom">
-						<button id="modeList" class="btn-red"></button>
-						<button id="addList" class="btn-green">Add</button>
-					</div>
+			<div id="settings" class="none">
+				<div id="settings-type">
+					<div>type:</div>
+					<select>
+						<option value="http">HTTP</option>
+						<option value="https">HTTPS</option>
+						<option value="socks4">SOCKS4</option>
+						<option value="socks">SOCKS5</option>
+					</select>
+				</div>
+
+				<div id="settings-host">
+					<div>host:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-port">
+					<div>port:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-auth">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider"></span>
+					</label>
+					<div>use auth</div>
+				</div>
+
+				<div id="settings-username">
+					<div>user:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-password">
+					<div>pass:</div>
+					<input type="text">
 				</div>
 			</div>
 
-			<div id="monitor">
-				<div>
-					<div class="header">Host monitor</div>
-					<div class="list-table">
-						<table>
-							<tbody></tbody>
-						</table>
+			<div id="list" class="none">
+				<div id="list-content">
+					<div id="list-row">
+						<template id="list-row-template">
+							<div>
+								<input type="text">
+								<div class="remove"></div>
+							</div>
+						</template>
 					</div>
+
+					<div id="list-text" class="none">
+						<textarea id="list-text-textarea"></textarea>
+					</div>
+				</div>
+
+				<div id="list-buttons">
+					<button id="list-mode-btn" class="orange" data-text-text="text" data-row-text="row"></button>
+					<button id="list-add-btn" class="green">add</button>
 				</div>
 			</div>
 
-			<div id="about">
-				<div>
-					<a href="https://github.com/martini-drinker/easyProxy" target="_blank"><button class="btn-purple">github</button></a>
-					<a href="https://github.com/martini-drinker/easyProxy#thank-you" target="_blank"><button class="btn-red">donate</button></a>
-				</div>
+			<div id="tracker" class="none">
+				<template id="tracker-row-template">
+					<div>
+						<div class="add"></div>
+						<input type="text" disabled>
+						<div class="remove"></div>
+					</div>
+				</template>
+			</div>
+
+			<div id="about" class="none">
+				<a href="https://github.com/martini-drinker/easyProxy" target="_blank"><button class="purple">github</button></a>
+				<a href="https://github.com/martini-drinker/easyProxy#thank-you" target="_blank"><button class="orange">donate</button></a>
 			</div>
 		</div>
 	</div>
-	<script type="text/javascript" src="js/popup.js"></script>
+	
+	<script src="js/popup.js"></script>
 </body>
 </html>

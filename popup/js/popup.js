@@ -1,628 +1,340 @@
-const addHostToListText = `Add host to list`;
-const removeHostFromListText = `Remove host from list`;
-const hostsTxtText = `Text`;
-const hostsRowText = `Row`;
+`use strict`;
 
-const deactiveClassName = `deactive`;
-const noneClassName = `none`;
-const hiddenClassName = `hidden`;
-const activeClassName = `active`;
-const addHostToListClassName = `bg-green`;
-const removeHostFromListClassName = `bg-red`;
-const errorClassName = `error`;
-const waitingClassName = `waiting`;
-const completeClassName = `complete`;
+const ids = getIds();
+const container = getContainer();
 
-let content = {
-	main: {
-		button: document.querySelector(`#mainBtn`),
-		container: document.querySelector(`#main`)
-	},
-	list: {
-		button: document.querySelector(`#listBtn`),
-		container: document.querySelector(`#list`)
-	},
-	monitor: {
-		button: document.querySelector(`#monitorBtn`),
-		container: document.querySelector(`#monitor`)
-	},
-	about: {
-		button: document.querySelector(`#aboutBtn`),
-		container: document.querySelector(`#about`)
-	}
-};
-
-let proxyTabInput = document.querySelector(`#proxyTab input`);
-let proxyGlobalInput = document.querySelector(`#proxyGlobal input`);
-let proxyListInput = document.querySelector(`#proxyList input`);
-let typeSelect = document.querySelector(`#type select`);
-let hostInput = document.querySelector(`#host input`);
-let portInput = document.querySelector(`#port input`);
-let proxyDNSTr = document.querySelector(`#proxyDNS`);
-let proxyDNSInput = proxyDNSTr.querySelector(`input`);
-let authTr = document.querySelector(`#auth`);
-let authInput = authTr.querySelector(`input`);
-let usernameTr = document.querySelector(`#username`);
-let usernameInput = usernameTr.querySelector(`input`);
-let passwordTr = document.querySelector(`#password`);
-let passwordInput = passwordTr.querySelector(`input`);
-let listTable = document.querySelector(`#list table`);
-let listTableTbody = document.querySelector(`#list table tbody`);
-let listTextarea = document.querySelector(`#list textarea`);
-let monitorTable = document.querySelector(`#monitor table`);
-let monitorTableTbody = document.querySelector(`#monitor table tbody`);
-let topButton = document.querySelector(`.top`);
-let addListButton = document.querySelector(`#addList`);
-let modeListButton = document.querySelector(`#modeList`);
-
-let settings, list, hostTab, statusTab, monitor;
+let settings, tab;
 
 let popupPort = browser.runtime.connect({name: `popup`});
 
 popupPort.onMessage.addListener(msg => {
-	if (msg.settings) {
-		settings = msg.settings;
-		list = Object.keys(settings.list);
-		hostTab = msg.host;
-		statusTab = msg.status;
-		monitor = msg.monitor;
+	if (msg.mode === `params`) {
+		({settings, tab} = msg);
 
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-		} else {
-			topButton.classList.add(noneClassName);
-		}
+		showContent(`controls`);
 
 		addListeners();
+	} else if (msg.host) {
+		if (msg.type === `main_frame`) {
+			tab.host = msg.host;
+			tab.tracker = {};
 
-		buildMainTable();
-
-		showContent(`main`);
-	} else if (typeof msg.hostLive !== `undefined`) {
-		hostTab = msg.hostLive;
-
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-
-			topButton.classList.remove(noneClassName);
-		} else {
-			topButton.classList.add(noneClassName);
-		}
-	} else if (typeof msg.monitorLive !== `undefined`) {
-		if (msg.isUpdate) {
-			monitor = {};
-
-			if (!content.monitor.container.classList.contains(noneClassName)) {
-				clearContent();
-			}
+			buildContent(`tracker`);
 		}
 
-		let [host, value] = msg.monitorLive;
+		tab.tracker[msg.host] = msg.status;
 
-		if (!content.monitor.container.classList.contains(noneClassName)) {
-			if (typeof monitor[host] !== `undefined`) {
-				changeMonitorInputColor(host, getMonitorInputClass(value));
+		if (container.tracker.menu.classList.contains(`active`)) {
+			let input = [...ids[`tracker`].querySelectorAll(`input`)].find(input => input.value === msg.host);
+
+			if (input) {
+				input.className = msg.status;
 			} else {
-				addMonitorTableTr(host, getMonitorInputClass(value));
+				ids[`tracker`].prepend(createTrackerRow(msg.host));
 			}
 		}
-
-		monitor[host] = value;
 	}
 });
 
-function showTopButton(isInList) {
-	let divArr = topButton.querySelectorAll(`div`);
+function getIds() {
+	let obj = {};
 
-	divArr[0].textContent = hostTab;
-
-	if (isInList) {
-		divArr[1].textContent = removeHostFromListText;
-		topButton.classList.add(removeHostFromListClassName);
-		topButton.classList.remove(addHostToListClassName);
-	} else {
-		divArr[1].textContent = addHostToListText;
-		topButton.classList.remove(removeHostFromListClassName);
-		topButton.classList.add(addHostToListClassName);
+	for (let e of document.querySelectorAll(`[id]`)) {
+		obj[e.id] = e;
 	}
+
+	return obj;
 }
 
-function showContent(type) {
-	if (content[type].button.classList.contains(activeClassName)) {
+function getContainer() {
+	let menu = document.querySelectorAll(`#menu > [id]`);
+	let content = document.querySelectorAll(`#content > [id]`);
+
+	let obj = {};
+
+	for (let i = 0; i < menu.length; ++i) {
+		obj[content[i].id] = {
+			menu: menu[i],
+			content: content[i]
+		};
+	}
+
+	return obj;
+}
+
+function showContent(pick) {
+	if (container[pick].menu.classList.contains(`active`)) {
 		return;
 	}
 
-	clearContent();
+	buildContent(pick);
 
-	switch (type) {
-		case `list`:
-			let mode = modeListButton.hasAttribute(`text`) ? `text` : `row`;
-
-			showList(mode);
-
-			if (mode === `row`) {
-				buildListTable({sort: true});
-			} else {
-				buildListText({sort: true});
-			}
-			
-			break;
-		case `monitor`:
-			buildMonitorTable();
-
-			break;
+	for (let item in container) {
+		container[item].menu.classList.toggle(`active`, item === pick);
+		container[item].content.classList.toggle(`none`, item !== pick);
 	}
+}
 
-	for (let item in content) {
-		if (item === type) {
-			content[item].container.classList.remove(noneClassName);
-			content[item].button.classList.add(activeClassName);
+function buildContent(pick) {
+	ids[`top`].classList.toggle(`none`, tab.host === null);
+	ids[`host`].textContent = tab.host || ``;
+	ids[`top`].classList.toggle(`remove`, settings.list.has(tab.host));
+	
+	if (pick === `controls`) {
+		ids[`controls-tab`].querySelector(`.switch > span`).classList.toggle(`purple`, tab.incognito);
+		ids[`controls-tab`].querySelector(`input`).checked = tab.proxy;
+		ids[`controls-host-list`].querySelector(`input`).checked = settings.listProxy;
+		ids[`controls-regular-tabs`].querySelector(`input`).checked = settings.regularProxy;
+		ids[`controls-incognito-tabs`].classList.toggle(`disabled`, !settings.isAllowedIncognitoAccess);
+		ids[`controls-incognito-tabs`].querySelector(`input`).checked = settings.incognitoProxy;
+		ids[`controls-dns`].classList.toggle(`disabled`, settings.type !== `socks4` && settings.type !== `socks`);
+		ids[`controls-dns`].querySelector(`input`).checked = settings.dnsProxy;
+	} else if (pick === `settings`) {
+		ids[`settings-type`].querySelector(`select`).value = settings.type;
+		ids[`settings-host`].querySelector(`input`).value = settings.host;
+		ids[`settings-port`].querySelector(`input`).value = settings.port;
+		ids[`settings-auth`].classList.toggle(`disabled`, settings.type === `socks4`);
+		ids[`settings-auth`].querySelector(`input`).checked = settings.auth;
+
+		let isAuthDisabled = !settings.auth || settings.type === `socks4`;
+
+		ids[`settings-username`].classList.toggle(`disabled`, isAuthDisabled);
+		ids[`settings-username`].querySelector(`input`).value = settings.username;
+		ids[`settings-password`].classList.toggle(`disabled`, isAuthDisabled);
+		ids[`settings-password`].querySelector(`input`).value = settings.password;
+	} else if (pick === `list`) {
+		if (ids[`list-mode-btn`].classList.contains(`text`)) {
+			ids[`list-text-textarea`].value = [...settings.list].sort().join(`\n`);
 		} else {
-			content[item].container.classList.add(noneClassName);
-			content[item].button.classList.remove(activeClassName);
-		}
-	}
-}
+			ids[`list-row`].replaceChildren();
 
-function clearContent() {
-	listTableTbody.textContent = ``;
-	listTextarea.value = ``;
-	monitorTableTbody.textContent = ``;
-}
-
-function buildMainTable() {
-	let eventChange = new Event(`change`);
-
-	if (statusTab) {
-		proxyTabInput.checked = true;
-	}
-
-	if (settings.status) {
-		proxyGlobalInput.checked = true;
-	}
-
-	if (settings.proxyList) {
-		proxyListInput.checked = true;
-	}
-
-	typeSelect.value = settings.proxyInfo.type;
-
-	typeSelect.dispatchEvent(eventChange);
-
-	hostInput.value = settings.proxyInfo.host;
-	portInput.value = settings.proxyInfo.port;
-
-	if (!proxyDNSTr.classList.contains(deactiveClassName) && settings.proxyDNS) {
-		proxyDNSInput.checked = settings.proxyDNS;
-	}
-
-	if (!authTr.classList.contains(deactiveClassName) && settings.auth) {
-		authInput.checked = settings.auth;
-	}
-
-	authInput.dispatchEvent(eventChange);
-
-	usernameInput.value = settings.authInfo.username;
-	passwordInput.value = settings.authInfo.password;
-}
-
-function showList(mode) {
-	if (mode === `text`) {
-		listTextarea.classList.remove(noneClassName);
-		listTable.classList.add(noneClassName);
-		
-		modeListButton.toggleAttribute(`text`, true);
-		modeListButton.textContent = hostsRowText;
-
-		addListButton.classList.add(noneClassName);
-	} else {
-		listTextarea.classList.add(noneClassName);
-		listTable.classList.remove(noneClassName);
-		
-		modeListButton.toggleAttribute(`text`, false);
-		modeListButton.textContent = hostsTxtText;
-
-		addListButton.classList.remove(noneClassName);
-	}
-}
-
-function buildListTable(params) {
-	listTableTbody.textContent = ``;
-
-	let arr = params?.list ? params?.list : list;
-
-	if (params?.sort) {
-		arr.sort();
-	}
-
-	for (let host of arr) {
-		addListTableTr(host);
-	}
-}
-
-function addListTableTr(host, params) {
-	let tr = document.createElement(`tr`);
-	tr.insertAdjacentHTML(`afterbegin`, `<td><input type="text" value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
-
-	let input = tr.querySelector(`input`);
-
-	input.addEventListener(`change`, e => {
-		input.value = hostNormalize(input.value);
-
-		let listObj = {};
-
-		list = [];
-
-		for (let input of listTable.querySelectorAll(`input`)) {
-			if (input.value === ``) {
-				continue;
-			}
-
-			if (input.value === e.target.value && input !== e.target) {
-				input.closest(`tr`).remove();
-
-				continue;
-			}
-
-			list.push(input.value);
-
-			listObj[input.value] = true;
-		}
-
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-		}
-
-		popupPort.postMessage({list: listObj});
-	});
-
-	tr.querySelector(`.remove`).addEventListener(`click`, e => {
-		let tr = e.target.closest(`tr`);
-
-		let host = tr.querySelector(`input`).value;
-
-		tr.remove();
-
-		listRemove(host);
-
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-		}
-
-		popupPort.postMessage({listAddRemove: false, host: host});
-	});
-
-	if (params?.reverse) {
-		listTableTbody.prepend(tr);
-	} else {
-		listTableTbody.append(tr);
-	}
-
-	if (params?.focus) {
-		input.focus();
-	}
-}
-
-function hostNormalize(host) {
-	return host.replace(/\s+/g, ``).replace(/^[\./]+/, ``).replace(/[\./]+$/, ``).toLowerCase();
-}
-
-function listRemove(host) {
-	let position = list.indexOf(host);
-
-	if (position !== -1) {
-		list.splice(list.indexOf(host), 1);
-	}
-}
-
-function buildListText(params) {
-	let arr = params?.list ? params?.list : list;
-
-	if (params?.sort) {
-		arr.sort();
-	}
-
-	listTextarea.value = arr.join(`\n`);
-}
-
-function buildMonitorTable() {
-	monitorTableTbody.textContent = ``;
-
-	Object.keys(monitor).sort().forEach(host => {
-		addMonitorTableTr(host, getMonitorInputClass(monitor[host]));
-	});
-}
-
-function addMonitorTableTr(host, className) {
-	let tr = document.createElement(`tr`);
-	tr.insertAdjacentHTML(`afterbegin`, `<td><div class="add">&#10010;</div></td><td><input class="${className}" type="text" disabled value="${host}"></td><td><div class="remove">&#10006;</div></td>`);
-
-	let addButton = tr.querySelector(`.add`);
-	let removeButton = tr.querySelector(`.remove`);
-
-	if (list.includes(host)) {
-		addButton.classList.add(hiddenClassName);
-	} else {
-		removeButton.classList.add(hiddenClassName);
-	}
-
-	removeButton.addEventListener(`click`, e => {
-		let tr = e.target.closest(`tr`);
-
-		let host = tr.querySelector(`input`).value;
-
-		listRemove(host);
-
-		tr.querySelector(`.add`).classList.remove(hiddenClassName);
-		tr.querySelector(`.remove`).classList.add(hiddenClassName);
-
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-		}
-
-		popupPort.postMessage({listAddRemove: false, host: host});
-	});
-
-	addButton.addEventListener(`click`, e => {
-		let tr = e.target.closest(`tr`);
-
-		let host = tr.querySelector(`input`).value;
-
-		listAdd(host);
-
-		tr.querySelector(`.add`).classList.add(hiddenClassName);
-		tr.querySelector(`.remove`).classList.remove(hiddenClassName);
-
-		if (hostTab) {
-			showTopButton(list.includes(hostTab));
-		}
-
-		popupPort.postMessage({listAddRemove: true, host: host});
-	});
-
-	monitorTableTbody.append(tr);
-}
-
-function getMonitorInputClass(value) {
-	if (value === false) {
-		return errorClassName;
-	} else if (value > 0) {
-		return waitingClassName;
-	}
-
-	return completeClassName;
-}
-
-function listAdd(host, params) {
-	if (params?.reverse) {
-		list.unshift(host); 
-	} else {
-		list.push(host);
-	}
-}
-
-function addListText(host) {
-	let arr = listTextarea.value.split(`\n`);
-
-	arr.unshift(host);
-
-	listTextarea.value = arr.join(`\n`);
-}
-
-function removeListText(host) {
-	listTextarea.value = listTextarea.value.split(`\n`).filter(value => value !== host).join(`\n`);
-}
-
-function changeMonitorTrButtons(host, mode) {
-	for (let input of monitorTableTbody.querySelectorAll(`input`)) {
-		if (input.value === host) {
-			let tr = input.closest(`tr`);
-
-			if (mode) {
-				tr.querySelector(`.add`).classList.remove(hiddenClassName);
-				tr.querySelector(`.remove`).classList.add(hiddenClassName);
-			} else {
-				tr.querySelector(`.add`).classList.add(hiddenClassName);
-				tr.querySelector(`.remove`).classList.remove(hiddenClassName);
+			for (let host of [...settings.list].sort()) {
+				ids[`list-row`].append(createListRow(host));
 			}
 		}
-	}
-}
+	} else if (pick === `tracker`) {
+		ids[`tracker`].replaceChildren();
 
-function changeMonitorInputColor(host, className) {
-	for (let input of monitorTableTbody.querySelectorAll(`input`)) {
-		if (input.value === host) {
-			input.className = className;
+		for (let host of Object.keys(tab.tracker).sort()) {
+			ids[`tracker`].append(createTrackerRow(host));
 		}
 	}
-}
-
-function removeListTableTr(host) {
-	for (let input of listTable.querySelectorAll(`input`)) {
-		if (input.value === host) {
-			input.closest(`tr`).remove();
-
-			break;
-		}
-	}
-}
-
-function getListFromTextArea() {
-	let set = new Set( listTextarea.value.split(`\n`).map(host => hostNormalize(host)).filter(host => host !== ``) );
-
-	return [...set];
-}
-
-function getProxyInfo() {
-	let proxyInfo = {
-		type: typeSelect.value,
-		host: hostInput.value,
-		port: portInput.value,
-		proxyDNS: proxyDNSInput.checked,
-		auth: authInput.checked,
-		username: usernameInput.value,
-		password: passwordInput.value
-	};
-
-	return proxyInfo;
 }
 
 function addListeners() {
-	content.main.button.addEventListener(`click`, () => {
-		showContent(`main`);
-	});
+	for (let item in container) {
+		container[item].menu.addEventListener(`click`, () => {
+			showContent(item);
+		});
+	}
 
-	content.list.button.addEventListener(`click`, () => {
-		showContent(`list`);
-	});
+	ids[`top`].addEventListener(`click`, () => {
+		if (settings.list.has(tab.host)) {
+			settings.list.delete(tab.host);
 
-	content.monitor.button.addEventListener(`click`, () => {
-		showContent(`monitor`);
-	});
-
-	content.about.button.addEventListener(`click`, () => {
-		showContent(`about`);
-	});
-
-	topButton.addEventListener(`click`, e => {
-		let mode = topButton.classList.contains(addHostToListClassName);
-
-		showTopButton(mode);
-
-		if (mode) {
-			listAdd(hostTab);
-
-			if (!content.list.container.classList.contains(noneClassName)) {
-				if (listTextarea.classList.contains(noneClassName)) {
-					addListTableTr(hostTab, {reverse: true});
-				} else {
-					addListText(hostTab);
-				}
-			} else if (!content.monitor.container.classList.contains(noneClassName)) {
-				changeMonitorTrButtons(hostTab, false);
-			}
+			ids[`top`].classList.remove(`remove`);
 		} else {
-			listRemove(hostTab);
+			settings.list.add(tab.host);
 
-			if (!content.list.container.classList.contains(noneClassName)) {
-				if (listTextarea.classList.contains(noneClassName)) {
-					removeListTableTr(hostTab);
-				} else {
-					removeListText(hostTab);
-				}
-			} else if (!content.monitor.container.classList.contains(noneClassName)) {
-				changeMonitorTrButtons(hostTab, true);
-			}
+			ids[`top`].classList.add(`remove`);
 		}
 
-		popupPort.postMessage({listAddRemove: mode});
-	});
-
-	addListButton.addEventListener(`click`, () => {
-		addListTableTr(``, {reverse: true, focus: true});
-	});
-
-	modeListButton.addEventListener(`click`, e => {
-		let mode = modeListButton.hasAttribute(`text`) ? `row` : `text`;
-
-		showList(mode);
-
-		if (mode === `row`) {
-			buildListTable({list: listTextarea.value.split(`\n`)});
-		} else {
-			buildListText({list: [...listTableTbody.querySelectorAll(`input`)].map(input => input.value)});
+		if (container.list.menu.classList.contains(`active`)) {
+			buildContent(`list`);
+		} else if (container.tracker.menu.classList.contains(`active`)) {
+			buildContent(`tracker`);
 		}
+		
+		popupPort.postMessage({list: settings.list});
 	});
 
-	listTextarea.addEventListener(`change`, e => {
-		list = getListFromTextArea();
+	ids[`controls-tab`].querySelector(`input`).addEventListener(`change`, e => {
+		tab.proxy = e.target.checked;
 
-		listTextarea.value = list.join(`\n`);
+		popupPort.postMessage({tabProxy: e.target.checked});
+	});
 
-		if (hostTab) {
-			showTopButton(list.includes(hostTab))
-		}
+	ids[`controls-host-list`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.listProxy = e.target.checked;
 
-		let listObj = {};
+		popupPort.postMessage({listProxy: e.target.checked});
+	});
 
-		for (let host of list) {
-			listObj[host] = true;
+	ids[`controls-regular-tabs`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.regularProxy = e.target.checked;
+
+		if (!tab.incognito) {
+			tab.proxy = e.target.checked;
 		}
 
-		popupPort.postMessage({list: listObj});
-	})
+		buildContent(`controls`);
 
-	typeSelect.addEventListener(`change`, e => {
-		if (e.currentTarget.value.indexOf(`socks`) === 0) {
-			proxyDNSTr.classList.remove(deactiveClassName);
-		} else {
-			proxyDNSInput.checked = false;
+		popupPort.postMessage({regularProxy: e.target.checked});
+	});
 
-			proxyDNSTr.classList.add(deactiveClassName);
+	ids[`controls-incognito-tabs`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.incognitoProxy = e.target.checked;
+
+		if (tab.incognito) {
+			tab.proxy = e.target.checked;
 		}
 
-		if (e.currentTarget.value !== `socks4`) {
-			authTr.classList.remove(deactiveClassName);
-		} else {
-			authInput.checked = false;
+		buildContent(`controls`);
 
-			authTr.classList.add(deactiveClassName);
-			usernameTr.classList.add(deactiveClassName);
-			passwordTr.classList.add(deactiveClassName);
+		popupPort.postMessage({incognitoProxy: e.target.checked});
+	});
+
+	ids[`controls-dns`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.dnsProxy = e.target.checked;
+
+		popupPort.postMessage({dnsProxy: e.target.checked});
+	});
+
+	ids[`settings-type`].querySelector(`select`).addEventListener(`change`, e => {
+		settings.type = e.target.value;
+
+		if (settings.type === `socks4`) {
+			settings.auth = false;
+		} else if (settings.type !== `socks4` && settings.type !== `socks`) {
+			settings.dnsProxy = false;
 		}
 
-		if (e.isTrusted) {
-			popupPort.postMessage(getProxyInfo());
-		}
+		buildContent(`settings`);
+
+		popupPort.postMessage({type: e.target.value});
 	});
 
-	authInput.addEventListener(`change`, e => {
-		if (e.target.checked) {
-			usernameTr.classList.remove(deactiveClassName);
+	ids[`settings-host`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.host = e.target.value;
 
-			passwordTr.classList.remove(deactiveClassName);
-		} else {
-			usernameTr.classList.add(deactiveClassName);
-
-			passwordTr.classList.add(deactiveClassName);
-		}
-
-		if (e.isTrusted) {
-			popupPort.postMessage(getProxyInfo());
-		}
+		popupPort.postMessage({host: e.target.value});
 	});
 
-	proxyTabInput.addEventListener(`change`, e => {
-		popupPort.postMessage({proxyTab: e.target.checked});
+	ids[`settings-port`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.port = e.target.value;
+
+		popupPort.postMessage({port: e.target.value});
 	});
 
-	proxyGlobalInput.addEventListener(`change`, e => {
-		proxyTabInput.checked = e.target.checked;
+	ids[`settings-auth`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.auth = e.target.checked;
 
-		popupPort.postMessage({proxyGlobal: e.target.checked});
+		buildContent(`settings`);
+
+		popupPort.postMessage({auth: e.target.checked});
 	});
 
-	proxyListInput.addEventListener(`change`, e => {
-		popupPort.postMessage({proxyList: e.target.checked});
+	ids[`settings-username`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.username = e.target.value;
+
+		popupPort.postMessage({username: e.target.value});
 	});
 
-	hostInput.addEventListener(`change`, () => {
-		popupPort.postMessage(getProxyInfo());
+	ids[`settings-password`].querySelector(`input`).addEventListener(`change`, e => {
+		settings.password = e.target.value;
+
+		popupPort.postMessage({password: e.target.value});
 	});
 
-	portInput.addEventListener(`change`, () => {
-		popupPort.postMessage(getProxyInfo());
+	ids[`list-text-textarea`].addEventListener(`change`, () => {
+		settings.list = new Set(ids[`list-text-textarea`].value.split(`\n`).map(host => hostNormalize(host)).filter(host => host !== ``));
+
+		buildContent();
+
+		popupPort.postMessage({list: settings.list});
 	});
 
-	proxyDNSInput.addEventListener(`change`, () => {
-		popupPort.postMessage(getProxyInfo());
+	ids[`list-mode-btn`].addEventListener(`click`, () => {
+		let isRow = !ids[`list-mode-btn`].classList.contains(`text`);
+
+		ids[`list-mode-btn`].classList.toggle(`text`, isRow);
+
+		buildContent(`list`);
+
+		ids[`list-row`].classList.toggle(`none`, isRow);
+		ids[`list-text`].classList.toggle(`none`, !isRow);
+		ids[`list-add-btn`].classList.toggle(`none`, isRow);
 	});
 
-	usernameInput.addEventListener(`change`, () => {
-		popupPort.postMessage(getProxyInfo());
+	ids[`list-add-btn`].addEventListener(`click`, () => {
+		let row = createListRow(``);
+
+		ids[`list-row`].prepend(row);
+
+		row.querySelector(`input`).focus();
+	});
+}
+
+function hostNormalize(host) {
+	return host.replace(/\s+|^[./]+|[./]+$/g, ``).toLowerCase();
+}
+
+function createListRow(host) {
+	let node = ids[`list-row-template`].content.firstElementChild.cloneNode(true);
+
+	let input = node.querySelector(`input`);
+
+	input.value = host;
+
+	input.addEventListener(`change`, () => {
+		input.value = hostNormalize(input.value);
+
+		settings.list = new Set([...ids[`list-row`].querySelectorAll(`input`)].map(e => e.value).filter(host => host !== ``));
+
+		popupPort.postMessage({list: settings.list});
+
+		buildContent();
 	});
 
-	passwordInput.addEventListener(`change`, () => {
-		popupPort.postMessage(getProxyInfo());
+	node.querySelector(`.remove`).addEventListener(`click`, () => {
+		settings.list.delete(host);
+
+		popupPort.postMessage({list: settings.list});
+
+		node.remove();
+
+		buildContent();
 	});
+
+	return node;
+}
+
+function createTrackerRow(host) {
+	let node = ids[`tracker-row-template`].content.firstElementChild.cloneNode(true);
+
+	let input = node.querySelector(`input`);
+
+	input.value = host;
+	input.classList.add(tab.tracker[host]);
+
+	let isHostInList = settings.list.has(host);
+	let addElem = node.querySelector(`.add`);
+	let removeElem = node.querySelector(`.remove`);
+
+	addElem.classList.toggle(`hidden`, isHostInList);
+	removeElem.classList.toggle(`hidden`, !isHostInList);
+
+	addElem.addEventListener(`click`, () => {
+		settings.list.add(host);
+
+		popupPort.postMessage({list: settings.list});
+
+		addElem.classList.add(`hidden`);
+		removeElem.classList.remove(`hidden`);
+
+		buildContent();
+	});
+
+	removeElem.addEventListener(`click`, () => {
+		settings.list.delete(host);
+
+		popupPort.postMessage({list: settings.list});
+
+		addElem.classList.remove(`hidden`);
+		removeElem.classList.add(`hidden`);
+
+		buildContent();
+	});
+
+	return node;
 }
