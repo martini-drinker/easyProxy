@@ -194,7 +194,11 @@ async function getTab(id) {
 	if (typeof id === `undefined`) {
 		tabParams = (await browser.tabs.query({currentWindow: true, active: true}))[0];
 
-		if (tabParams.id === -1) {
+		if (!tabParams) {
+			tabParams = (await browser.tabs.query({active: true}))[0];
+		}
+
+		if (!tabParams || tabParams.id === -1) {
 			return null;
 		}
 
