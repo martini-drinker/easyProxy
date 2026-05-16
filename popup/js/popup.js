@@ -281,19 +281,19 @@ function createListRow(host) {
 
 		settings.list = new Set([...ids[`list-row`].querySelectorAll(`input`)].map(e => e.value).filter(host => host !== ``));
 
-		popupPort.postMessage({list: settings.list});
-
 		buildContent();
+
+		popupPort.postMessage({list: settings.list});
 	});
 
 	node.querySelector(`.remove`).addEventListener(`click`, () => {
-		settings.list.delete(host);
-
-		popupPort.postMessage({list: settings.list});
+		settings.list.delete(input.value);
 
 		node.remove();
 
 		buildContent();
+
+		popupPort.postMessage({list: settings.list});
 	});
 
 	return node;
@@ -317,23 +317,23 @@ function createTrackerRow(host) {
 	addElem.addEventListener(`click`, () => {
 		settings.list.add(host);
 
-		popupPort.postMessage({list: settings.list});
-
 		addElem.classList.add(`hidden`);
 		removeElem.classList.remove(`hidden`);
 
 		buildContent();
+
+		popupPort.postMessage({list: settings.list});
 	});
 
 	removeElem.addEventListener(`click`, () => {
 		settings.list.delete(host);
 
-		popupPort.postMessage({list: settings.list});
-
 		addElem.classList.remove(`hidden`);
 		removeElem.classList.add(`hidden`);
 
 		buildContent();
+
+		popupPort.postMessage({list: settings.list});
 	});
 
 	return node;

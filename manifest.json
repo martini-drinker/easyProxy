@@ -1,11 +1,12 @@
 {
 	"manifest_version": 2,
 	"name": "EasyProxy",
-	"version": "5.2",
+	"version": "5.3",
 	"description": "Simple proxy switcher. Tab proxy support.",
 	"icons": {
+		"32": "img/32-regular.png",
 		"48": "img/48.png",
-		"96": "img/96.png"
+		"128": "img/128.png"
 	},
 	"background": {
 		"scripts": ["background.js"]
