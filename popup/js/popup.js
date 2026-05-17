@@ -211,9 +211,17 @@ function addListeners() {
 	});
 
 	ids[`settings-port`].querySelector(`input`).addEventListener(`change`, e => {
-		settings.port = e.target.value;
+		let port = +e.target.value;
 
-		popupPort.postMessage({port: e.target.value});
+		if (isNaN(port) || port < 0 || !Number.isInteger(port)) {
+			port = 0;
+		}
+
+		e.target.value = port;
+
+		settings.port = port;
+
+		popupPort.postMessage({port});
 	});
 
 	ids[`settings-auth`].querySelector(`input`).addEventListener(`change`, e => {

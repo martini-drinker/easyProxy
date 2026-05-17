@@ -221,6 +221,10 @@ button:hover {
 	gap: 10px;
 }
 
+#controls > div:first-child {
+	margin-bottom: 15px;
+}
+
 #controls > div:last-child {
 	margin-top: 15px;
 }

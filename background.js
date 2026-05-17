@@ -134,9 +134,13 @@ async function updateDataIfNeeded(data, propsToSave) {
 	}
 
 	if (typeof data.proxyInfo?.port !== `undefined`) {
-		data.port = data.proxyInfo.port;
+		let port = +data.proxyInfo.port;
 
-		propsToSave.add(`port`);
+		if (!isNaN(port) && port >= 0 && Number.isInteger(port)) {
+			data.port = port;
+
+			propsToSave.add(`port`);
+		}
 	}
 
 	if (typeof data.authInfo?.username !== `undefined`) {
@@ -192,10 +196,10 @@ async function getTab(id) {
 	let tabParams;
 
 	if (typeof id === `undefined`) {
-		tabParams = (await browser.tabs.query({currentWindow: true, active: true}))[0];
+		[tabParams] = await browser.tabs.query({currentWindow: true, active: true});
 
 		if (!tabParams) {
-			tabParams = (await browser.tabs.query({active: true}))[0];
+			[tabParams] = await browser.tabs.query({active: true});
 		}
 
 		if (!tabParams || tabParams.id === -1) {
