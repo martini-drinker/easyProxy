@@ -441,8 +441,10 @@ function getHostObjFromUrl(str, isFull) {
 	try {
 		let url = new URL(str);
 
-		if (!url.hostname || url.hostname === ``) {
-			return;
+		const allowedProtocols = /^(https?|wss?|ftp):$/;
+
+		if (!allowedProtocols.test(url.protocol) || !url.hostname || url.hostname === ``) {
+			return null;
 		}
 
 		let hostname = url.hostname.toLowerCase().replace(/^\.+|\.+$/g, ``);
