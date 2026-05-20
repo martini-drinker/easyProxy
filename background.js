@@ -16,30 +16,33 @@ let settings = {
 			proxyDNS: this.dnsProxy
 		};
 
-		if (this.type === `socks` && this.auth) {
+		if (this.auth && this.type === `socks`) {
 			obj.username = this.username;
 			obj.password = this.password;
 		}
 
 		return obj;
-	},
-	get authInfo() {
-		return {
-			username: this.username,
-			password: this.password
-		};
 	}
 };
 
-let tabs = {};
+let settingsPromise = null,
+	tabs = {};
+
+addListeners();
 
 (async () => {
-	await setSettings();
+	await setSettingsIfNeeded();
 
 	await updateIcon(await getTab());
-
-	addListeners();
 })();
+
+async function setSettingsIfNeeded() {
+	if (!settingsPromise) {
+		settingsPromise = setSettings();
+	}
+
+	return settingsPromise;
+}
 
 async function setSettings() {
 	const defaultSettings = {
@@ -232,6 +235,8 @@ async function getTab(id) {
 
 function addListeners() {
 	browser.runtime.onConnect.addListener(async popupPort => {
+		await setSettingsIfNeeded();
+
 		let tab = await getTab();
 
 		if (tab === null) {
@@ -261,12 +266,18 @@ function addListeners() {
 	});
 
 	if (browser.windows?.onFocusChanged?.addListener) {
-		browser.windows.onFocusChanged.addListener(async () => {
-			await updateIcon(await getTab());
+		browser.windows.onFocusChanged.addListener(async windowId => {
+			if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+				await setSettingsIfNeeded();
+
+				await updateIcon(await getTab());
+			}
 		});
 	}
 
 	browser.tabs.onActivated.addListener(async activeInfo => {
+		await setSettingsIfNeeded();
+
 		await updateIcon(await getTab(activeInfo.tabId));
 	});
 
@@ -275,6 +286,8 @@ function addListeners() {
 	});
 
 	browser.webRequest.onBeforeRequest.addListener(async details => {
+		await setSettingsIfNeeded();
+
 		let tab = await getTab(details.tabId);
 
 		if (tab === null) {
@@ -302,17 +315,22 @@ function addListeners() {
 		addToTracker({id: details.tabId, url: details.url, status: `error`});
 	}, {urls: [`<all_urls>`]});
 
-	browser.webRequest.onAuthRequired.addListener(details => {
-		if (
-			details.isProxy
-			&& settings.auth
-			&& (settings.type === `http` || settings.type === `https`)
-		) {
-			return {authCredentials: settings.authInfo};
+	browser.webRequest.onAuthRequired.addListener(async details => {
+		await setSettingsIfNeeded();
+
+		if (details.isProxy && settings.auth && (settings.type === `http` || settings.type === `https`)) {
+			return {
+				authCredentials: {
+					username: settings.username,
+					password: settings.password
+				}
+			};
 		}
 	}, {urls: [`<all_urls>`]}, [`blocking`]);
 
 	browser.proxy.onRequest.addListener(async requestInfo => {
+		await setSettingsIfNeeded();
+
 		if (settings.listProxy && isUrlInHostList(requestInfo.url)) {
 			return settings.proxyInfo;
 		}
@@ -327,7 +345,7 @@ function addListeners() {
 	}, {urls: [`<all_urls>`]});
 
 	browser.proxy.onError.addListener(error => {
-		console.error(`Proxy error: ${error.message}`);
+		console.error(`Proxy error:`, error);
 	});
 }
 
@@ -375,18 +393,14 @@ async function onMessage(msg, tab) {
 
 		let propsToSave = [`type`];
 
-		if (settings.type === `socks4`) {
-			if (settings.auth === true) {
-				settings.auth = false;
+		if (settings.auth && settings.type === `socks4`) {
+			settings.auth = false;
 
-				propsToSave.push(`auth`);
-			}
-		} else if (settings.type !== `socks4` && settings.type !== `socks`) {
-			if (settings.dnsProxy === true) {
-				settings.dnsProxy = false;
+			propsToSave.push(`auth`);
+		} else if (settings.dnsProxy && settings.type !== `socks4` && settings.type !== `socks`) {
+			settings.dnsProxy = false;
 
-				propsToSave.push(`dnsProxy`);
-			}
+			propsToSave.push(`dnsProxy`);
 		}
 
 		await saveSettings(propsToSave);

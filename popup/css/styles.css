@@ -188,12 +188,56 @@ button:hover {
 	width: var(--menu-width);
 	display: flex;
 	flex-direction: column;
-	font-size: 30px;
 	text-align: center;
 }
 
 #menu > div {
+	position: relative;
+	width: 100%;
+	height: 40px;
 	cursor: pointer;
+}
+
+#menu > div::before {
+	content: "";
+	position: absolute;
+	width: 25px;
+	height: 25px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background-color: white;
+    -webkit-mask-position: center;
+	-webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+#controls-btn::before {
+	-webkit-mask-image: url("../img/controls.svg");
+	mask-image: url("../img/controls.svg");
+}
+
+#settings-btn::before {
+	-webkit-mask-image: url("../img/settings.svg");
+	mask-image: url("../img/settings.svg");
+}
+
+#list-btn::before {
+	-webkit-mask-image: url("../img/list.svg");
+	mask-image: url("../img/list.svg");
+}
+
+#tracker-btn::before {
+	-webkit-mask-image: url("../img/tracker.svg");
+	mask-image: url("../img/tracker.svg");
+}
+
+#about-btn::before {
+	-webkit-mask-image: url("../img/about.svg");
+	mask-image: url("../img/about.svg");
 }
 
 #content {
