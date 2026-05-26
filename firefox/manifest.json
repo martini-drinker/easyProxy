@@ -1,0 +1,39 @@
+{
+	"manifest_version": 2,
+	"name": "EasyProxy",
+	"version": "5.6",
+	"description": "Simple proxy switcher. Tab proxy support.",
+	"icons": {
+		"32": "img/32-regular.png",
+		"48": "img/48.png",
+		"128": "img/128.png"
+	},
+	"background": {
+		"scripts": ["background.js"]
+	},
+	"permissions": [
+		"storage",
+		"tabs",
+		"proxy",
+		"webRequest",
+		"webRequestBlocking",
+		"<all_urls>"
+	],
+	"browser_action": {
+		"default_icon": "img/32-off.png",
+		"default_title": "EasyProxy",
+		"default_popup": "popup/index.html"
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "easyproxy@martini-drinker",
+			"strict_min_version": "140.0",
+			"data_collection_permissions": {
+				"required": ["none"]
+			}
+		},
+		"gecko_android": {
+			"strict_min_version": "142.0"
+		}
+	}
+}
