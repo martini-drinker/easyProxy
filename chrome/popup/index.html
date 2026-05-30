@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>EasyProxy</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<div class="container">
+		<div id="top" class="none">
+			<div id="host"></div>
+			<div id="host-text" data-add-text="add host to list" data-remove-text="remove host from list"></div>
+		</div>
+
+		<div id="menu">
+			<div id="controls-btn"></div>
+			<div id="settings-btn"></div>
+			<div id="list-btn"></div>
+			<div id="tracker-btn"></div>
+			<div id="about-btn"></div>
+		</div>
+
+		<div id="content">
+			<div id="controls" class="none">
+				<div id="controls-host-list">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider orange"></span>
+					</label>
+					<div>host list</div>
+				</div>
+
+				<div id="controls-regular-tabs">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider green"></span>
+					</label>
+					<div>regular tabs</div>
+				</div>
+
+				<div id="controls-incognito-tabs">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider purple"></span>
+					</label>
+					<div>incognito tabs</div>
+				</div>
+			</div>
+
+			<div id="settings" class="none">
+				<div id="settings-type">
+					<div>type:</div>
+					<select>
+						<option value="http">HTTP</option>
+						<option value="https">HTTPS</option>
+						<option value="socks4">SOCKS4</option>
+						<option value="socks5">SOCKS5</option>
+					</select>
+				</div>
+
+				<div id="settings-host">
+					<div>host:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-port">
+					<div>port:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-auth">
+					<label class="switch">
+						<input type="checkbox">
+						<span class="slider"></span>
+					</label>
+					<div>use auth</div>
+				</div>
+
+				<div id="settings-username">
+					<div>user:</div>
+					<input type="text">
+				</div>
+
+				<div id="settings-password">
+					<div>pass:</div>
+					<input type="text">
+				</div>
+			</div>
+
+			<div id="list" class="none">
+				<div id="list-content">
+					<div id="list-row">
+						<template id="list-row-template">
+							<div>
+								<input type="text">
+								<div class="remove"></div>
+							</div>
+						</template>
+					</div>
+
+					<div id="list-text" class="none">
+						<textarea id="list-text-textarea"></textarea>
+					</div>
+				</div>
+
+				<div id="list-buttons">
+					<button id="list-mode-btn" class="orange" data-text-text="text" data-row-text="row"></button>
+					<button id="list-add-btn" class="green">add</button>
+				</div>
+			</div>
+
+			<div id="tracker" class="none">
+				<template id="tracker-row-template">
+					<div>
+						<div class="add"></div>
+						<input type="text" disabled>
+						<div class="remove"></div>
+					</div>
+				</template>
+			</div>
+
+			<div id="about" class="none">
+				<a href="https://github.com/martini-drinker/easyProxy" target="_blank"><button class="purple">github</button></a>
+				<a href="https://github.com/martini-drinker/easyProxy#thank-you" target="_blank"><button class="orange">donate</button></a>
+			</div>
+		</div>
+	</div>
+	
+	<script src="js/popup.js"></script>
+</body>
+</html>
