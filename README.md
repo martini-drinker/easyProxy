@@ -4,7 +4,7 @@
 ![list](./img/screenshots/list.png)
 ![tracker](./img/screenshots/tracker.png)
 
-Simple proxy switcher for Firefox and Chrome.
+Simple proxy switcher for [Firefox](https://addons.mozilla.org/ru/firefox/addon/easyproxy/) and [Chrome](https://chromewebstore.google.com/detail/ahkbeppklmmdpdgepgfoadfmmkkmbebi?utm_source=item-share-cb).
 Firefox for Android support.
 
 Support proxy: HTTP, HTTPS, SOCKS4, SOCKS5.
