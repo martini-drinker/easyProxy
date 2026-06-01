@@ -15,7 +15,7 @@ popupPort.onMessage.addListener(msg => {
 
 		addListeners();
 	} else if (msg.host) {
-		if (msg.type === `main_frame`) {
+		if (msg.isMain) {
 			tab.host = msg.host;
 			tab.tracker = {};
 

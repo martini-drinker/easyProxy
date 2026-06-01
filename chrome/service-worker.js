@@ -203,12 +203,14 @@ function addListeners() {
 		}
 
 		if (details.type === `main_frame`) {
+			tab.tracker = {};
+
 			tab.host = getHostObjFromUrl(details.url)?.host || null;
 
-			tab.tracker = {};
+			addToTracker({tab: tab, host: tab.host, status: `pending`, isMain: true});
+		} else {
+			addToTracker({tab: tab, url: details.url, status: `pending`});
 		}
-
-		addToTracker({tab: tab, host: tab.host, status: `pending`, type: details.type});
 	}, {urls: [`<all_urls>`]});
 
 	chrome.webRequest.onCompleted.addListener(details => {
@@ -394,18 +396,18 @@ function getHostObjFromUrl(str, isFull) {
 async function addToTracker(params) {
 	if (!params.tab) {
 		params.tab = await getTab(params.id);
-	}
 
-	if (params.tab === null) {
-		return;
+		if (params.tab === null) {
+			return;
+		}
 	}
 
 	if (!params.host) {
 		params.host = getHostObjFromUrl(params.url)?.host || null;
-	}
 
-	if (params.host === null) {
-		return;
+		if (params.host === null) {
+			return;
+		}
 	}
 
 	if (params.tab.tracker[params.host] !== `ok`) {
@@ -414,8 +416,8 @@ async function addToTracker(params) {
 		if (params.tab.popupPort) {
 			let msg = {host: params.host, status: params.status};
 
-			if (params.type) {
-				msg.type = params.type;
+			if (params.isMain) {
+				msg.isMain = params.isMain;
 			}
 
 			params.tab.popupPort.postMessage(msg);
