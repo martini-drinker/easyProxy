@@ -357,7 +357,7 @@ async function saveSettings(keys) {
 	}
 
 	if (Object.keys(obj).length) {
-		await browser.storage.local.set(obj);
+		await chrome.storage.local.set(obj);
 	}
 
 	function addToObj(key) {

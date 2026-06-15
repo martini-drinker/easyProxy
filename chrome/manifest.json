@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "EasyProxy",
-	"version": "1.2",
+	"version": "1.3",
 	"description": "Simple proxy switcher.",
 	"icons": {
 		"16": "img/16.png",
